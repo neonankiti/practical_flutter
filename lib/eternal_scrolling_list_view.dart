@@ -1,8 +1,23 @@
-import 'dart:developer';
-import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+abstract class IndexRepository {
+  Future<List<String>> getIndices(int cursor);
+}
+
+class IndexRepositoryImpl extends IndexRepository {
+  @override
+  Future<List<String>> getIndices(int cursor) {
+    final List<String> items = [];
+    for (int i = 0; i < 20; i++) {
+      items.add("Item Position is ${(cursor - 1) * 20 + i}");
+    }
+    return Future.delayed(Duration(seconds: 3), () {
+      return items;
+    });
+  }
+}
 
 class EternalScrollingListPage extends StatelessWidget {
   @override
@@ -11,7 +26,9 @@ class EternalScrollingListPage extends StatelessWidget {
         appBar:
             // TODO i18n
             AppBar(title: Text("External Scrolling List Page")),
-        body: EternalScrollingListView());
+        body: Provider<IndexRepository>(
+            create: (_) => IndexRepositoryImpl(),
+            child: EternalScrollingListView()));
   }
 }
 
@@ -34,7 +51,6 @@ class _ExternalScrollState extends State<EternalScrollingListView> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
-    getItems(_nextCursor);
   }
 
   void _scrollListener() {
@@ -58,16 +74,17 @@ class _ExternalScrollState extends State<EternalScrollingListView> {
 
   // TODO make it to a repository and inject with provider.
   void getItems(int nextCursor) {
+    // TODO refactoring. maybe async or sync processing a bit buggy.
     _isLoading = true;
-    Future.delayed(Duration(seconds: 3), () {
+    Provider.of<IndexRepository>(context)
+        .getIndices(nextCursor)
+        .then((onValue) {
       setState(() {
-        for (int i = 0; i < 20; i++) {
-          _items.add("Item Position is ${(nextCursor - 1) * 20 + i}");
-        }
-        _nextCursor++;
-        _isLoading = false;
-        isSameRequest = false;
+        _items.addAll(onValue);
       });
+      _nextCursor++;
+      _isLoading = false;
+      isSameRequest = false;
     });
   }
 
@@ -78,7 +95,9 @@ class _ExternalScrollState extends State<EternalScrollingListView> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext buildContext) {
+    // TODO remove this to domain operation.
+    getItems(_nextCursor);
     return ListView.builder(
         controller: _scrollController,
         itemBuilder: (context, index) {

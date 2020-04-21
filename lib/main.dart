@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:practical_flutter/eternal_scrolling_list_view.dart';
+import 'package:provider/provider.dart';
 
 void main() => runApp(MyApp());
 
@@ -29,7 +30,7 @@ class HomePage extends StatelessWidget {
           GestureDetector(
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return EternalScrollingListView();
+                return EternalScrollingListPage();
               }));
             },
             // TODO i18n
